@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bookstore | Projeto final</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #183044; background: #f4f7fa; }
+    body { margin: 0; padding: 48px 20px; }
+    main { max-width: 760px; margin: auto; padding: 36px; background: #fff; border: 1px solid #dbe4eb; border-radius: 12px; }
+    .label { color: #397460; font-weight: 700; letter-spacing: .08em; font-size: .8rem; }
+    h1 { margin: 12px 0; font-size: clamp(2rem, 6vw, 3rem); }
+    p { line-height: 1.7; }
+    nav { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0; }
+    a { color: #17664f; font-weight: 600; }
+    nav a { padding: 12px 18px; border: 1px solid #bad5ca; border-radius: 6px; text-decoration: none; }
+    dl { display: grid; grid-template-columns: 110px 1fr; gap: 12px; padding-top: 22px; border-top: 1px solid #dbe4eb; }
+    dt { font-weight: 600; } dd { margin: 0; overflow-wrap: anywhere; }
+    footer { margin-top: 30px; color: #607484; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <span class="label">EBAC · MÓDULO 23</span>
+    <h1>Bookstore API</h1>
+    <p>Projeto final de Back-End Python com Django REST Framework, integração contínua e entrega automática no PythonAnywhere.</p>
+    <nav aria-label="Acessos do projeto">
+      <a href="{% url 'api:api-root' %}">Abrir API</a>
+      <a href="{% url 'admin:index' %}">Administração</a>
+    </nav>
+    <dl>
+      <dt>Versão</dt><dd>{{ version }}</dd>
+      <dt>Recursos</dt><dd>Categorias, produtos e pedidos</dd>
+      {% if commit %}<dt>Commit</dt><dd>{{ commit }}</dd>{% endif %}
+      {% if deployed_at %}<dt>Atualização</dt><dd>{{ deployed_at }}</dd>{% endif %}
+    </dl>
+    <footer>Bruno Costa Macedo de Almeida</footer>
+  </main>
+</body>
+</html>
