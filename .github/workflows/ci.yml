@@ -1,0 +1,89 @@
+name: CI - Bookstore
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  tests:
+    name: Testes no Docker Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      COMPOSE_PROJECT_NAME: m23-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      POSTGRES_DB: bookstore
+      POSTGRES_USER: bookstore
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,[::1]
+      APP_PORT: "8004"
+
+    steps:
+      - name: Obter o codigo
+        id: checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Gerar configuracao temporaria de CI
+        shell: bash
+        run: |
+          {
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
+            echo "DJANGO_SECRET_KEY=$(openssl rand -hex 48)"
+          } >> "$GITHUB_ENV"
+
+      - name: Validar o Docker Compose
+        run: docker compose config --quiet
+
+      - name: Construir e iniciar a API e o PostgreSQL
+        run: docker compose up -d --build --wait --wait-timeout 120
+
+      - name: Conferir os servicos
+        run: docker compose ps
+
+      - name: Verificar a configuracao do Django
+        run: docker compose exec -T web python manage.py check
+
+      - name: Verificar as migracoes
+        run: docker compose exec -T web python manage.py makemigrations --check --dry-run
+
+      - name: Executar os testes no PostgreSQL
+        run: docker compose exec -T web python manage.py test --verbosity 2
+
+      - name: Executar os testes no SQLite da hospedagem gratuita
+        run: docker compose exec -T -e DATABASE_ENGINE=sqlite -e SQLITE_DB_PATH=/tmp/m23-ci.sqlite3 web python manage.py test --verbosity 2
+
+      - name: Exibir logs em caso de falha
+        if: ${{ failure() && steps.checkout.outcome == 'success' }}
+        run: docker compose logs --no-color --tail 100 web db
+
+      - name: Remover os recursos temporarios de CI
+        if: ${{ always() && steps.checkout.outcome == 'success' }}
+        run: docker compose down --volumes --remove-orphans
+
+  deploy:
+    name: Publicar no PythonAnywhere
+    needs: tests
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.PYTHONANYWHERE_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    concurrency:
+      group: pythonanywhere-production
+      cancel-in-progress: false
+    steps:
+      - name: Obter o codigo aprovado
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Atualizar a aplicacao pelo webhook autenticado
+        env:
+          PYTHONANYWHERE_WEBHOOK_URL: ${{ secrets.PYTHONANYWHERE_WEBHOOK_URL }}
+          DEPLOY_WEBHOOK_SECRET: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}
+        run: python deploy/github_hook_client.py
