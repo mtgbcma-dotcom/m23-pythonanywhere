@@ -4,6 +4,22 @@ Projeto final do Módulo 23 de Continuação Back-End Python da EBAC.
 
 Preparei a API Bookstore para hospedagem gratuita no PythonAnywhere, seguindo o material de Projeto Final. A aplicação utiliza SQLite na hospedagem e PostgreSQL no Docker. A integração contínua testa os dois bancos antes de permitir a entrega automática da branch main.
 
+
+
+## Aplicação publicada
+
+Publiquei o Bookstore em **https://brunom89.pythonanywhere.com/hello/**. A página mostra a versão da aplicação; a API está disponível em https://brunom89.pythonanywhere.com/api/.
+
+Entrego o [PR de implementação](https://github.com/mtgbcma-dotcom/m23-pythonanywhere/pull/1) e o [PR de comprovação da atualização automática](https://github.com/mtgbcma-dotcom/m23-pythonanywhere/pull/2), junto com o endereço publicado. Mantive o histórico das entregas já integradas e registrei as correções posteriores na branch `main`.
+
+## Continuidade do projeto e do ambiente
+
+Dei continuidade à entrega do [módulo 22 — Integração contínua](https://github.com/mtgbcma-dotcom/m22-ci/pull/1). Mantive os modelos, os serializers, a migração inicial e os testes de serializers do Bookstore, além das funcionalidades acrescentadas nas etapas anteriores.
+
+Nos módulos 15 e 16, utilizei Poetry com `pyproject.toml` e `poetry.lock`. A partir do módulo 17, passei a declarar as dependências em `requirements.txt` e a instalar com pip. Nas etapas com Docker, o próprio Dockerfile executa essa instalação durante a construção da imagem. Documentei essa mudança de ferramenta para deixar explícita a continuidade do mesmo projeto.
+
+Para reproduzir esta entrega, utilizei os comandos e os arquivos de dependências desta versão, descritos abaixo. A instalação com pip segue as faixas registradas em `requirements.txt`; o lock do Poetry das etapas anteriores continua disponível nos respectivos repositórios.
+
 ## Recursos
 
 - API de categorias, produtos e pedidos com Django REST Framework.
@@ -183,3 +199,8 @@ Alterações locais em arquivos versionados e histórico divergente interrompem 
 ## Autor
 
 Bruno Costa Macedo de Almeida
+
+
+## Compatibilidade dos testes de configuração
+
+Ajustei o teste do arquivo WSGI para comparar o valor do caminho `project_dir` no código Python gerado. Assim, a verificação funciona com as barras escapadas do Windows e com os caminhos do Linux. Os testes de bloqueio e atualização do deploy continuam exclusivos de Linux, que é o ambiente utilizado no Docker e na hospedagem PythonAnywhere.

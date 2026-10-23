@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 import subprocess
@@ -194,7 +195,16 @@ class PythonAnywhereConfigurationTests(SimpleTestCase):
         self.assertGreaterEqual(len(values["DJANGO_SECRET_KEY"]), 64)
         self.assertGreaterEqual(len(values["DEPLOY_WEBHOOK_SECRET"]), 64)
         self.assertEqual(result["domain"], "student.pythonanywhere.com")
-        self.assertIn(str(self.root), Path(result["wsgi_example"]).read_text())
+        wsgi_code = ast.parse(Path(result["wsgi_example"]).read_text(encoding="utf-8"))
+        project_assignment = next(
+            statement for statement in wsgi_code.body
+            if isinstance(statement, ast.Assign)
+            and any(
+                isinstance(target, ast.Name) and target.id == "project_dir"
+                for target in statement.targets
+            )
+        )
+        self.assertEqual(ast.literal_eval(project_assignment.value), str(self.root))
         self.assertNotIn(values["DEPLOY_WEBHOOK_SECRET"], json.dumps(result))
         if os.name == "posix":
             self.assertEqual((self.root / ".env").stat().st_mode & 0o077, 0)
