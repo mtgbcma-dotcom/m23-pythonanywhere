@@ -48,17 +48,20 @@ jobs:
       - name: Conferir os servicos
         run: docker compose ps
 
+      - name: Conferir manifesto e lock Poetry
+        run: docker compose exec -T web poetry check --lock
+
       - name: Verificar a configuracao do Django
-        run: docker compose exec -T web python manage.py check
+        run: docker compose exec -T web poetry run python manage.py check
 
       - name: Verificar as migracoes
-        run: docker compose exec -T web python manage.py makemigrations --check --dry-run
+        run: docker compose exec -T web poetry run python manage.py makemigrations --check --dry-run
 
       - name: Executar os testes no PostgreSQL
-        run: docker compose exec -T web python manage.py test --verbosity 2
+        run: docker compose exec -T web poetry run python manage.py test --verbosity 2
 
       - name: Executar os testes no SQLite da hospedagem gratuita
-        run: docker compose exec -T -e DATABASE_ENGINE=sqlite -e SQLITE_DB_PATH=/tmp/m23-ci.sqlite3 web python manage.py test --verbosity 2
+        run: docker compose exec -T -e DATABASE_ENGINE=sqlite -e SQLITE_DB_PATH=/tmp/m23-ci.sqlite3 web poetry run python manage.py test --verbosity 2
 
       - name: Exibir logs em caso de falha
         if: ${{ failure() && steps.checkout.outcome == 'success' }}

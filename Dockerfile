@@ -3,6 +3,9 @@ FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    POETRY_VERSION=2.5.1 \
+    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_NO_INTERACTION=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
@@ -11,8 +14,11 @@ RUN apt-get update \
     && apt-get install --no-install-recommends -y git \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements*.txt .
-RUN python -m pip install --no-cache-dir -r requirements-postgresql.txt
+RUN python -m pip install --no-cache-dir "poetry==${POETRY_VERSION}"
+
+COPY pyproject.toml poetry.lock README.md ./
+RUN poetry check --lock \
+    && poetry install --only main --no-root --no-interaction --no-ansi
 
 COPY . .
 

@@ -14,11 +14,22 @@ Entrego o [PR de implementação](https://github.com/mtgbcma-dotcom/m23-pythonan
 
 ## Continuidade do projeto e do ambiente
 
-Dei continuidade à entrega do [módulo 22 — Integração contínua](https://github.com/mtgbcma-dotcom/m22-ci/pull/1). Mantive os modelos, os serializers, a migração inicial e os testes de serializers do Bookstore, além das funcionalidades acrescentadas nas etapas anteriores.
+Dei continuidade ao [módulo 22 — Integração contínua](https://github.com/mtgbcma-dotcom/m22-ci/pull/1). Mantive os modelos, serializers, migração inicial, paginação, autenticação e testes da API Bookstore.
 
-Nos módulos 15 e 16, utilizei Poetry com `pyproject.toml` e `poetry.lock`. A partir do módulo 17, passei a declarar as dependências em `requirements.txt` e a instalar com pip. Nas etapas com Docker, o próprio Dockerfile executa essa instalação durante a construção da imagem. Documentei essa mudança de ferramenta para deixar explícita a continuidade do mesmo projeto.
+Mantive **Poetry** como gerenciador do projeto, com `pyproject.toml` e `poetry.lock` versionados. Preservei a identificação `m57-bookstore` e as dependências da base corrigida do módulo 17. Acrescentei ao manifesto somente as dependências necessárias para esta etapa e atualizei o lock pelo Poetry.
 
-Para reproduzir esta entrega, utilizei os comandos e os arquivos de dependências desta versão, descritos abaixo. A instalação com pip segue as faixas registradas em `requirements.txt`; o lock do Poetry das etapas anteriores continua disponível nos respectivos repositórios.
+Configurei o Dockerfile para instalar Poetry 2.5.1, conferir o lock e instalar as dependências com `poetry install --only main --no-root`. O pip instala apenas a ferramenta Poetry na imagem; as dependências da aplicação são instaladas pelo Poetry a partir do lock.
+
+Os arquivos `requirements*.txt` são exportações de compatibilidade do mesmo lock, utilizadas quando uma plataforma exige esse formato. A fonte de dependências desta entrega é o manifesto e o lock do Poetry. Registrei a continuidade e a validação em [docs/CONTINUIDADE.md](docs/CONTINUIDADE.md).
+
+Para conferir o manifesto no computador com Poetry 2.5.1 instalado:
+
+```powershell
+poetry check --lock
+poetry install --no-root --no-interaction
+```
+
+Nos módulos com PostgreSQL, executei os testes nos serviços Docker descritos abaixo, onde o banco está configurado. No contêiner, utilizei `poetry run python manage.py test` no mesmo ambiente instalado pelo Poetry.
 
 ## Recursos
 
@@ -47,8 +58,8 @@ Abra `.env`, ajuste `POSTGRES_PASSWORD` para o banco local e salve. Não sobresc
 ```powershell
 docker compose up -d --build --wait
 docker compose ps
-docker compose exec web python manage.py createsuperuser
-docker compose exec web python manage.py seed_demo
+docker compose exec web poetry run python manage.py createsuperuser
+docker compose exec web poetry run python manage.py seed_demo
 ```
 
 Os serviços `web` e `db` devem estar `healthy`. O comando `seed_demo` cria 12 categorias e 12 produtos, sem duplicar os mesmos dados quando executado novamente.
@@ -63,15 +74,15 @@ Para produtos e categorias, use **Log in** com o administrador criado. Pedidos e
 ## Testar
 
 ```powershell
-docker compose exec -T web python manage.py check
-docker compose exec -T web python manage.py makemigrations --check --dry-run
-docker compose exec -T web python manage.py test --verbosity 2
+docker compose exec -T web poetry run python manage.py check
+docker compose exec -T web poetry run python manage.py makemigrations --check --dry-run
+docker compose exec -T web poetry run python manage.py test --verbosity 2
 ```
 
 Para executar a mesma suíte com SQLite, utilizado na hospedagem gratuita:
 
 ```powershell
-docker compose exec -T -e DATABASE_ENGINE=sqlite -e SQLITE_DB_PATH=/tmp/m23-tests.sqlite3 web python manage.py test --verbosity 2
+docker compose exec -T -e DATABASE_ENGINE=sqlite -e SQLITE_DB_PATH=/tmp/m23-tests.sqlite3 web poetry run python manage.py test --verbosity 2
 ```
 
 Os 130 testes passaram em PostgreSQL e SQLite no ambiente Docker Linux. Eles utilizam bancos temporários e cobrem a API, permissões, autenticação, paginação, assinatura do webhook, atualização do repositório, preservação de dados, configuração da hospedagem e arquivos estáticos.
@@ -111,12 +122,13 @@ git clone https://github.com/mtgbcma-dotcom/m23-pythonanywhere.git
 cd m23-pythonanywhere
 python3.10 -m venv ~/venv-m23
 source ~/venv-m23/bin/activate
-pip install -r requirements.txt
-python deploy/configure_pythonanywhere.py
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py seed_demo
-python manage.py collectstatic --noinput
+python -m pip install poetry==2.5.1
+poetry install --only main --no-root --no-interaction
+poetry run python deploy/configure_pythonanywhere.py
+poetry run python manage.py migrate
+poetry run python manage.py createsuperuser
+poetry run python manage.py seed_demo
+poetry run python manage.py collectstatic --noinput
 ```
 
 Use uma versão de Python compatível com Django 5.2 e disponível na sua conta, como Python 3.10 ou posterior. Escolha a mesma versão ao criar o web app.
@@ -204,3 +216,8 @@ Bruno Costa Macedo de Almeida
 ## Compatibilidade dos testes de configuração
 
 Ajustei o teste do arquivo WSGI para comparar o valor do caminho `project_dir` no código Python gerado. Assim, a verificação funciona com as barras escapadas do Windows e com os caminhos do Linux. Os testes de bloqueio e atualização do deploy continuam exclusivos de Linux, que é o ambiente utilizado no Docker e na hospedagem PythonAnywhere.
+
+
+## Exportação para a hospedagem
+
+Mantive o atualizador da hospedagem compatível com `requirements.txt`, mas gerei esse arquivo a partir do mesmo `poetry.lock`, com as versões e os marcadores de plataforma resolvidos pelo Poetry. Assim, a instalação da hospedagem e a instalação por Poetry usam as mesmas dependências. Para reproduzir a exportação, utilizei o plugin oficial `poetry-plugin-export` 1.9.0 e `poetry export --only main --without-hashes -f requirements.txt -o requirements.txt`.

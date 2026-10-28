@@ -1,2 +1,2 @@
+# Dependencias exportadas do poetry.lock em requirements.txt.
 -r requirements.txt
-psycopg[binary]>=3.2,<4.0
