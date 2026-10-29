@@ -88,6 +88,38 @@ class CategoryViewSetTests(ViewSetTestBase):
 
 
 class ProductViewSetTests(ViewSetTestBase):
+    def test_visitors_can_list_and_retrieve_products_without_login(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(reverse("api:product-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 2)
+        self.assertEqual({item["id"] for item in response.data["results"]}, {
+            self.product.pk, self.other_product.pk,
+        })
+        detail = self.client.get(reverse("api:product-detail", args=[self.product.pk]))
+        self.assertEqual(detail.status_code, status.HTTP_200_OK)
+        self.assertEqual(detail.data["category"]["id"], self.category.pk)
+        self.assertEqual(detail.data["price"], "89.90")
+
+    def test_product_writes_still_require_staff(self):
+        detail_url = reverse("api:product-detail", args=[self.product.pk])
+        data = {"name": "Alterado", "price": "10.00", "category_id": self.category.pk}
+        for user in [None, self.customer]:
+            self.client.force_authenticate(user=user)
+            for method, url in [
+                (self.client.post, reverse("api:product-list")),
+                (self.client.put, detail_url),
+                (self.client.patch, detail_url),
+                (self.client.delete, detail_url),
+            ]:
+                with self.subTest(user=user, method=method.__name__):
+                    response = method(url, data, format="json")
+                    self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Product.objects.count(), 2)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.name, "Python")
+        self.assertEqual(self.product.price, Decimal("89.90"))
+
     def test_list_and_detail_return_nested_category(self):
         response = self.client.get(reverse("api:product-list"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -228,18 +260,20 @@ class RoutingAndPermissionTests(ViewSetTestBase):
                 response = self.client.get(reverse(f"api:{resource}-detail", args=[99999]))
                 self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_visitors_cannot_read_or_write_management_endpoints(self):
+    def test_visitors_can_read_products_but_cannot_write_management_endpoints(self):
         self.client.force_authenticate(user=None)
         for resource in ["category", "product", "order"]:
             with self.subTest(resource=resource):
                 url = reverse(f"api:{resource}-list")
                 expected = status.HTTP_401_UNAUTHORIZED if resource == "order" else status.HTTP_403_FORBIDDEN
-                self.assertEqual(self.client.get(url).status_code, expected)
+                read_expected = status.HTTP_200_OK if resource == "product" else expected
+                self.assertEqual(self.client.get(url).status_code, read_expected)
                 self.assertEqual(self.client.post(url, {}, format="json").status_code, expected)
 
-    def test_regular_user_cannot_access_management_endpoints(self):
+    def test_regular_user_can_read_products_but_not_private_resources(self):
         self.client.force_authenticate(user=self.customer)
         for resource in ["category", "product", "order"]:
             with self.subTest(resource=resource):
                 response = self.client.get(reverse(f"api:{resource}-list"))
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+                expected = status.HTTP_200_OK if resource == "product" else status.HTTP_403_FORBIDDEN
+                self.assertEqual(response.status_code, expected)

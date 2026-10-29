@@ -12,6 +12,14 @@ Publiquei o Bookstore em **https://brunom89.pythonanywhere.com/hello/**. A pági
 
 Entrego o [PR de implementação](https://github.com/mtgbcma-dotcom/m23-pythonanywhere/pull/1) e o [PR de comprovação da atualização automática](https://github.com/mtgbcma-dotcom/m23-pythonanywhere/pull/2), junto com o endereço publicado. Mantive o histórico das entregas já integradas e registrei as correções posteriores na branch `main`.
 
+## Consulta pública de produtos
+
+Apliquei a orientação do tutor e a correção do módulo 17: a listagem `GET /api/products/` e o detalhe `GET /api/products/{id}/` são públicos, sem necessidade de login ou token. Preservei a paginação de 5 registros, os links para as páginas seguintes e a categoria na representação dos produtos.
+
+Mantive o cadastro, a alteração e a exclusão de produtos restritos à equipe por sessão ou Basic Authentication. Os pedidos continuam protegidos por TokenAuthentication e retornam HTTP 401 sem token. Mantive também a permissão de categorias e o Poetry, com o manifesto e o lock sem alterações nesta correção.
+
+Acrescentei testes de consulta anônima da listagem e dos detalhes, paginação sem login e bloqueio de todas as operações de escrita de produtos para visitantes e usuários comuns. Registrei a validação em [docs/CONTINUIDADE.md](docs/CONTINUIDADE.md).
+
 ## Continuidade do projeto e do ambiente
 
 Dei continuidade ao [módulo 22 — Integração contínua](https://github.com/mtgbcma-dotcom/m22-ci/pull/1). Mantive os modelos, serializers, migração inicial, paginação, autenticação e testes da API Bookstore.
@@ -69,7 +77,7 @@ Os serviços `web` e `db` devem estar `healthy`. O comando `seed_demo` cria 12 c
 - Produtos: http://127.0.0.1:8004/api/products/
 - Administração: http://127.0.0.1:8004/admin/
 
-Para produtos e categorias, use **Log in** com o administrador criado. Pedidos exigem o cabeçalho `Authorization: Token <token>` e retornam HTTP 401 sem token, mesmo com uma sessão de login no navegador. O webhook fica desativado no ambiente Docker local.
+Consulte a listagem e os detalhes de produtos sem fazer login. Para acessar categorias ou cadastrar, alterar e excluir produtos, use **Log in** com o administrador criado. A listagem de produtos preserva `count`, `next`, `previous` e `results`. Pedidos exigem `Authorization: Token <token>` e retornam HTTP 401 sem token, mesmo com sessão de login. O webhook fica desativado no ambiente Docker local.
 
 ## Testar
 
@@ -85,7 +93,7 @@ Para executar a mesma suíte com SQLite, utilizado na hospedagem gratuita:
 docker compose exec -T -e DATABASE_ENGINE=sqlite -e SQLITE_DB_PATH=/tmp/m23-tests.sqlite3 web poetry run python manage.py test --verbosity 2
 ```
 
-Os 130 testes passaram em PostgreSQL e SQLite no ambiente Docker Linux. Eles utilizam bancos temporários e cobrem a API, permissões, autenticação, paginação, assinatura do webhook, atualização do repositório, preservação de dados, configuração da hospedagem e arquivos estáticos.
+Os 133 testes passaram em PostgreSQL e SQLite no ambiente Docker Linux. Eles utilizam bancos temporários e cobrem a API, permissões, autenticação, paginação, assinatura do webhook, atualização do repositório, preservação de dados, configuração da hospedagem e arquivos estáticos.
 
 Para parar ou recriar a aplicação preservando os cadastros:
 

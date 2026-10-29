@@ -4,6 +4,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser
 
 from .models import Category, Order, Product
+from .permissions import IsAdminUserOrReadOnly
 from .serializers import CategorySerializer, OrderSerializer, ProductSerializer
 
 
@@ -24,11 +25,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    """Cadastro de produtos com a categoria na representação de leitura."""
+    """Consulta pública de produtos, com alterações restritas à equipe."""
 
     queryset = Product.objects.select_related("category").order_by("id")
     serializer_class = ProductSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUserOrReadOnly]
 
 
 class OrderViewSet(viewsets.ModelViewSet):

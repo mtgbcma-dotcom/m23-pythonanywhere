@@ -182,7 +182,16 @@ class OrderTokenAuthenticationTests(APITestCase):
 
     def test_token_does_not_enable_token_authentication_on_catalog(self):
         self.authenticate_with_token()
-        for resource in ["category", "product"]:
-            with self.subTest(resource=resource):
-                response = self.client.get(reverse(f"api:{resource}-list"))
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            self.client.get(reverse("api:category-list")).status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+        # Product reads are public; the token header does not grant write access.
+        self.assertEqual(
+            self.client.get(reverse("api:product-list")).status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            self.client.post(reverse("api:product-list"), {}, format="json").status_code,
+            status.HTTP_403_FORBIDDEN,
+        )

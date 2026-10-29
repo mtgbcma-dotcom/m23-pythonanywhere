@@ -24,6 +24,28 @@ class PaginationTests(APITestCase):
     def setUp(self):
         self.client.force_authenticate(user=self.staff)
 
+    def test_visitors_can_paginate_products_while_orders_require_token(self):
+        self.client.force_authenticate(user=None)
+        first = self.client.get(reverse("api:product-list"))
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertEqual(first.data["count"], 12)
+        self.assertEqual(len(first.data["results"]), 5)
+        self.assertIsNone(first.data["previous"])
+        second = self.client.get(first.data["next"])
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(second.data["results"]), 5)
+        self.assertTrue(second.data["previous"])
+        self.assertTrue(second.data["next"])
+        self.assertTrue(
+            {item["id"] for item in first.data["results"]}.isdisjoint(
+                item["id"] for item in second.data["results"]
+            )
+        )
+        self.assertEqual(
+            self.client.get(reverse("api:order-list")).status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
     def test_first_page_has_metadata_and_five_results_on_all_lists(self):
         for resource in ["category", "product", "order"]:
             with self.subTest(resource=resource):
