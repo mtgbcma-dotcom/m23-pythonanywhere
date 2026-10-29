@@ -23,3 +23,9 @@ Apliquei a [correção do módulo 17](https://github.com/mtgbcma-dotcom/m17-toke
 Acrescentei três testes para a leitura anônima, a paginação pública e o bloqueio das operações de escrita para visitantes e usuários comuns. Atualizei as expectativas dos cenários anteriores que bloqueavam a consulta de produtos. Mantive os modelos, serializers, migrações, dependências, pyproject.toml e poetry.lock sem alterações nesta correção.
 
 Validei o manifesto e o lock com Poetry 2.5.1, construí a imagem Python 3.13 e executei as verificações de Django e migrações sem problemas. Executei os 133 testes no PostgreSQL e os mesmos 133 no SQLite: todos passaram no Docker Linux. Conferi também requisições HTTP reais sem credenciais: listagem, segunda página e detalhe de produto retornaram HTTP 200; pedidos sem token retornaram HTTP 401; escrita de produtos e acesso a categorias sem login retornaram HTTP 403.
+
+## Tempo da coleta de estáticos na hospedagem
+
+Identifiquei no registro de erros do PythonAnywhere que `collectstatic --noinput` excedia o limite de 30 segundos durante a publicação. Ampliei essa etapa para 120 segundos e ajustei a espera do cliente para 290 segundos, preservando os demais limites e as verificações de segurança. O conjunto das etapas permanece limitado a 260 segundos, antes da resposta do cliente e do limite de cinco minutos do worker. Mantive as dependências e o lock do Poetry sem alterações.
+
+Após esse ajuste, reconstruí a imagem pelo Poetry e repeti as verificações de Django, migrações, 133 testes no PostgreSQL e 133 no SQLite: todos passaram. As requisições HTTP anônimas de produtos retornaram 200 e os pedidos sem token continuaram retornando 401.

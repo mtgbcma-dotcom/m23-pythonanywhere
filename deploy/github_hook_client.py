@@ -35,7 +35,7 @@ def send_deployment(url, secret, repository, sha):
         "X-GitHub-Event": "push", "X-Hub-Signature-256": signature,
     })
     try:
-        with urlopen(request, timeout=210) as response:
+        with urlopen(request, timeout=290) as response:
             result = json.load(response)
     except HTTPError as error:
         raise RuntimeError(f"Webhook retornou HTTP {error.code}. Consulte o log do servidor.") from error

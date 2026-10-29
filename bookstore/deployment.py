@@ -89,7 +89,7 @@ def deploy_release(sha):
             run_command([str(python), "-m", "pip", "install", "--disable-pip-version-check",
                          "--no-input", "-r", "requirements.txt"], timeout=90)
             run_command([str(python), "manage.py", "migrate", "--noinput"], timeout=30)
-            run_command([str(python), "manage.py", "collectstatic", "--noinput"], timeout=30)
+            run_command([str(python), "manage.py", "collectstatic", "--noinput"], timeout=120)
 
             os.utime(wsgi, None)
             state = {"sha": sha, "deployed_at": datetime.now(timezone.utc).isoformat()}

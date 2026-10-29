@@ -196,6 +196,8 @@ Altere `VERSION` em `bookstore/version.py`, por exemplo de `1.0.0` para `1.0.1`,
 
 O webhook verifica a assinatura, o repositório, a branch e o commit aprovado. Ele busca a main e atualiza o clone apenas por fast-forward. Se a main já tiver um commit mais novo, ignora a solicitação antiga para evitar publicar código ainda não testado. Depois instala as dependências, aplica as migrações, coleta os estáticos e toca o arquivo WSGI para solicitar a recarga da aplicação.
 
+Após conferir o registro de erros da hospedagem, ajustei o limite da coleta de estáticos de 30 para 120 segundos e o tempo de espera do cliente do GitHub Actions para 290 segundos. Os limites das etapas somam 260 segundos, com margem para a resposta antes do [limite de cinco minutos dos workers do PythonAnywhere](https://help.pythonanywhere.com/pages/AsyncInWebApps/). Mantive os limites, a assinatura do webhook, o bloqueio de entregas concorrentes e a gravação do sucesso somente após concluir todas as etapas.
+
 Alterações locais em arquivos versionados e histórico divergente interrompem a atualização, preservando o clone. Entregas repetidas do mesmo commit não repetem uma publicação já concluída. Os detalhes de falha ficam no log do servidor, e não na resposta pública do webhook.
 
 ## Arquivos principais

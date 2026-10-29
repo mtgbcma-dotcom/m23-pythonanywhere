@@ -182,7 +182,7 @@ class DeploymentClientTests(SimpleTestCase):
         headers = {key.lower(): value for key, value in request.header_items()}
         self.assertEqual(headers["x-hub-signature-256"], expected)
         self.assertEqual(json.loads(request.data)["ci"], {"conclusion": "success", "sha": SHA})
-        self.assertEqual(self.open.call_args.kwargs["timeout"], 210)
+        self.assertEqual(self.open.call_args.kwargs["timeout"], 290)
 
     def test_insecure_or_unexpected_target_is_rejected(self):
         for url in ("http://example.pythonanywhere.com/update_server/", "https://example.com/update_server/",
